@@ -1,0 +1,29 @@
+# XcodeGen spec — on a Mac run: brew install xcodegen && xcodegen generate
+name: Libos
+options:
+  bundleIdPrefix: uz.libos
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  Libos:
+    type: application
+    platform: iOS
+    sources: [Libos]
+    settings:
+      base:
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Libos needs photo access so you can add clothes to your wardrobe."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Libos uses the camera to photograph your clothes."
+        PRODUCT_BUNDLE_IDENTIFIER: uz.libos.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: Libos/Info.plist
+      properties:
+        CFBundleDisplayName: Libos
+        NSAppTransportSecurity:
+          # Dev only: allows plain HTTP to the local backend. Remove for App Store.
+          NSAllowsArbitraryLoads: true
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [libos]
+            CFBundleURLName: uz.libos.app

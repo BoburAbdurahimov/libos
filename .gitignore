@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.env
+.env.local
+*.tsbuildinfo
+backend/public/uploads/
+.DS_Store
+ios/Libos.xcodeproj/xcuserdata/
+ios/build/
+DerivedData/

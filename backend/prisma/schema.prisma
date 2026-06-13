@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER // shopper / stylist customer
+  INFLUENCER // creates and promotes bundles
+  SELLER // local-market shop owner
+  ADMIN
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  handle       String?  @unique // public influencer handle, e.g. @dilnoza.style
+  bio          String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  garments Garment[]
+  outfits  Outfit[]
+  shops    Shop[]
+  bundles  Bundle[]
+}
+
+// A single clothing item in a user's digital wardrobe, tagged by AI
+model Garment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl      String
+  category      String // top | bottom | dress | outerwear | shoes | accessory | bag
+  subcategory   String?
+  colors        String[]
+  styleTags     String[] // casual, formal, streetwear, vintage...
+  season        String? // summer | winter | demi | all
+  aiDescription String?
+  createdAt     DateTime @default(now())
+
+  outfitItems OutfitItem[]
+}
+
+model Outfit {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  occasion   String?
+  aiScore    Int? // 0-100
+  aiFeedback String?
+  createdAt  DateTime @default(now())
+
+  items OutfitItem[]
+}
+
+model OutfitItem {
+  outfitId  String
+  outfit    Outfit  @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  garmentId String
+  garment   Garment @relation(fields: [garmentId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, garmentId])
+}
+
+// A local-market shop (e.g. a stall in Chorsu bazaar) run by a SELLER
+model Shop {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  marketName  String? // physical market the shop trades in
+  city        String
+  phone       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  price       Int // minor units of `currency`
+  currency    String   @default("UZS")
+  imageUrl    String?
+  category    String
+  sizes       String[]
+  inStock     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  bundleItems BundleItem[]
+  orders      BundleOrder[]
+}
+
+// The marketing feature: an influencer-curated set of local-market products,
+// shared via social media through a public landing page + deep link
+model Bundle {
+  id            String   @id @default(cuid())
+  influencerId  String
+  influencer    User     @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  slug          String   @unique // short code used in the share URL /b/{slug}
+  title         String
+  description   String?
+  coverImageUrl String?
+  commissionPct Int      @default(10) // influencer cut on orders, agreed with sellers
+  active        Boolean  @default(true)
+  // Last AI-generated social captions, cached so re-shares are free
+  captionIg     String?
+  captionTiktok String?
+  captionTg     String?
+  hashtags      String[]
+  createdAt     DateTime @default(now())
+
+  items  BundleItem[]
+  clicks BundleClick[]
+  orders BundleOrder[]
+}
+
+model BundleItem {
+  bundleId  String
+  bundle    Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  note      String? // influencer's styling note for this item
+
+  @@id([bundleId, productId])
+}
+
+// One row per landing-page visit — powers click analytics per social network
+model BundleClick {
+  id        String   @id @default(cuid())
+  bundleId  String
+  bundle    Bundle   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  source    String? // utm_source: instagram | tiktok | telegram | other
+  createdAt DateTime @default(now())
+
+  @@index([bundleId, createdAt])
+}
+
+// Order intent left by a shopper on the landing page; seller follows up by
+// phone. Total is snapshotted so commission stays correct if prices change.
+model BundleOrder {
+  id         String      @id @default(cuid())
+  bundleId   String
+  bundle     Bundle      @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerName  String
+  buyerPhone String
+  priceAt    Int
+  currency   String      @default("UZS")
+  status     OrderStatus @default(NEW)
+  createdAt  DateTime    @default(now())
+
+  @@index([bundleId, status])
+}
