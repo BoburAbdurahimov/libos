@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "./components/AuthProvider";
+import { ThemeProvider } from "./components/ThemeProvider";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Libos — outfits from local markets",
@@ -9,10 +11,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, -apple-system, sans-serif", background: "#faf8f5", color: "#1c1917" }}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <head>
+        {/* prevent flash of wrong theme before React hydrates */}
+        <script dangerouslySetInnerHTML={{ __html: `try{const t=localStorage.getItem('libos_theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}` }} />
+      </head>
+      <body style={{ background: "var(--bg)", color: "var(--t1)", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

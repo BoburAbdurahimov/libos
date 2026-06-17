@@ -9,15 +9,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !token) {
-      router.replace("/login");
-    }
+    if (!loading && !token) router.replace("/login");
   }, [loading, token, router]);
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#a8a29e", fontSize: 14 }}>Loading…</div>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ color: "var(--t4)", fontSize: 14 }}>Loading…</div>
       </div>
     );
   }
